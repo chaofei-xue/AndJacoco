@@ -3,6 +3,7 @@ package com.andjacoco.demo
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
+import android.widget.Toast
 import com.andjacoco.demo.databinding.ActivityMainBinding
 
 class MainActivity : BaseActivity() {
@@ -17,6 +18,8 @@ class MainActivity : BaseActivity() {
 
         binding.tv.setOnClickListener {
             startActivity(Intent(this, SecondActivity::class.java))
+
+            Toast.makeText(this, "Test Info", Toast.LENGTH_LONG).show()
         }
 
         Hello.hello(false)
