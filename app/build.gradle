@@ -7,7 +7,7 @@ plugins {
 }
 
 //代码覆盖配置，暂时注释
-/*
+
 jacocoCoverageConfig {
     jacocoEnable true //开关
     branchName 'main'//要对比的分支名
@@ -27,7 +27,7 @@ jacocoCoverageConfig {
         return false
     }
 }
-*/
+
 
 android {
     compileSdkVersion 31
@@ -81,7 +81,6 @@ android {
 }
 
 // 暂时注释掉
-/*
 def ArrayList<String> getAllJavaDir() {
     Set<Project> projects = project.rootProject.subprojects
     List<String> javaDir = new ArrayList<>(projects.size())
@@ -94,7 +93,6 @@ def ArrayList<String> getAllJavaDir() {
 def isWindows(){
     return System.properties['os.name'].toLowerCase().contains('windows')
 }
-*/
 
 dependencies {
     implementation fileTree(dir: "libs", include: ["*.jar"])
