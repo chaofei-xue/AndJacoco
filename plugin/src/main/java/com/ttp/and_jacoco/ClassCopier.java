@@ -1,10 +1,10 @@
 package com.ttp.and_jacoco;
 
-import com.android.utils.FileUtils;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -40,7 +40,8 @@ public class ClassCopier extends ClassProcessor {
             if (!fileOut.getParentFile().exists()) {
                 fileOut.getParentFile().mkdirs();
             }
-            FileUtils.copyFile(fileIn, fileOut);
+            // 使用Java NIO替代FileUtils
+            Files.copy(fileIn.toPath(), fileOut.toPath(), StandardCopyOption.REPLACE_EXISTING);
         }
     }
 

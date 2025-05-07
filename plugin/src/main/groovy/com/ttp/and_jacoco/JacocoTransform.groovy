@@ -2,7 +2,6 @@ package com.ttp.and_jacoco
 
 import com.android.build.api.transform.*
 import com.android.build.gradle.internal.pipeline.TransformManager
-import com.android.utils.FileUtils
 import com.ttp.and_jacoco.extension.JacocoExtension
 import com.ttp.and_jacoco.task.BranchDiffTask
 import com.ttp.and_jacoco.util.Utils
@@ -11,6 +10,10 @@ import org.codehaus.groovy.runtime.IOGroovyMethods
 import org.gradle.api.Project
 import org.jacoco.core.diff.DiffAnalyzer
 import org.jacoco.core.tools.Util
+
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
+import java.util.Collections
 
 class JacocoTransform extends Transform {
     Project project
@@ -42,8 +45,8 @@ class JacocoTransform extends Transform {
         return true
     }
 
-    @Override
-    void transform(TransformInvocation transformInvocation) throws TransformException, InterruptedException, IOException {
+    // 从TransformInvocation获取信息
+    void doTransform(TransformInvocation transformInvocation) {
         def dirInputs = new HashSet<>()
         def jarInputs = new HashSet<>()
 
@@ -72,15 +75,59 @@ class JacocoTransform extends Transform {
             }
             //对diff方法插入探针
             inject(transformInvocation, dirInputs, jarInputs, jacocoExtension.includes)
-
         }
+    }
+
+    // 实现必要的抽象方法
+    void transform(Context context, Collection<TransformInput> inputs, Collection<TransformInput> referencedInputs, 
+                  TransformOutputProvider outputProvider, boolean isIncremental) 
+                  throws IOException, TransformException, InterruptedException {
+        // 创建TransformInvocation并传递给doTransform
+        TransformInvocation transformInvocation = new TransformInvocation() {
+            @Override
+            Context getContext() {
+                return context
+            }
+
+            @Override
+            Collection<TransformInput> getInputs() {
+                return inputs
+            }
+
+            @Override
+            Collection<TransformInput> getReferencedInputs() {
+                return referencedInputs
+            }
+
+            @Override
+            Collection<SecondaryInput> getSecondaryInputs() {
+                return Collections.emptyList()
+            }
+
+            @Override
+            TransformOutputProvider getOutputProvider() {
+                return outputProvider
+            }
+
+            @Override
+            boolean isIncremental() {
+                return isIncremental
+            }
+        }
+        doTransform(transformInvocation)
+    }
+
+    // 新版本API的transform方法
+    void transform(TransformInvocation transformInvocation) throws TransformException, InterruptedException, IOException {
+        doTransform(transformInvocation)
     }
 
     def copy(TransformInvocation transformInvocation, def dirInputs, def jarInputs, List<String> includes) {
         def classDir = "${project.projectDir}/classes"
         ClassCopier copier = new ClassCopier(classDir, includes)
         if (!transformInvocation.incremental) {
-            FileUtils.deletePath(new File(classDir))
+            // 替换FileUtils.deletePath
+            deleteDirectory(new File(classDir))
         }
         if (!dirInputs.isEmpty()) {
             dirInputs.each { dirInput ->
@@ -136,14 +183,16 @@ class JacocoTransform extends Transform {
                 File dirOutput = transformInvocation.outputProvider.getContentLocation(dirInput.getName(),
                         dirInput.getContentTypes(), dirInput.getScopes(),
                         Format.DIRECTORY)
-                FileUtils.mkdirs(dirOutput)
+                // 替换FileUtils.mkdirs
+                dirOutput.mkdirs()
 
                 if (transformInvocation.incremental) {
                     dirInput.changedFiles.each { entry ->
                         File fileInput = entry.getKey()
                         File fileOutputTransForm = new File(fileInput.getAbsolutePath().replace(
                                 dirInput.file.getAbsolutePath(), dirOutput.getAbsolutePath()))
-                        FileUtils.mkdirs(fileOutputTransForm.parentFile)
+                        // 替换FileUtils.mkdirs
+                        fileOutputTransForm.parentFile.mkdirs()
                         Status fileStatus = entry.getValue()
                         switch (fileStatus) {
                             case Status.ADDED:
@@ -155,7 +204,8 @@ class JacocoTransform extends Transform {
                                         DiffAnalyzer.getInstance().containsClass(getClassName(fileInput))) {
                                     injector.doClass(fileInput, fileOutputTransForm)
                                 } else {
-                                    FileUtils.copyFile(fileInput, fileOutputTransForm)
+                                    // 替换FileUtils.copyFile
+                                    Files.copy(fileInput.toPath(), fileOutputTransForm.toPath(), StandardCopyOption.REPLACE_EXISTING)
                                 }
                                 break
                             case Status.REMOVED:
@@ -173,12 +223,14 @@ class JacocoTransform extends Transform {
                 } else {
                     dirInput.file.traverse(type: FileType.FILES) { fileInput ->
                         File fileOutputTransForm = new File(fileInput.getAbsolutePath().replace(dirInput.file.getAbsolutePath(), dirOutput.getAbsolutePath()))
-                        FileUtils.mkdirs(fileOutputTransForm.parentFile)
+                        // 替换FileUtils.mkdirs
+                        fileOutputTransForm.parentFile.mkdirs()
                         if (jacocoExtension.jacocoEnable &&
                                 DiffAnalyzer.getInstance().containsClass(getClassName(fileInput))) {
                             injector.doClass(fileInput, fileOutputTransForm)
                         } else {
-                            FileUtils.copyFile(fileInput, fileOutputTransForm)
+                            // 替换FileUtils.copyFile
+                            Files.copy(fileInput.toPath(), fileOutputTransForm.toPath(), StandardCopyOption.REPLACE_EXISTING)
                         }
                     }
                 }
@@ -192,7 +244,8 @@ class JacocoTransform extends Transform {
                         jarInputFile.getName(), getOutputTypes(), getScopes(), Format.JAR
                 )
 
-                FileUtils.mkdirs(jarOutputFile.parentFile)
+                // 替换FileUtils.mkdirs
+                jarOutputFile.parentFile.mkdirs()
 
                 switch (jarInput.status) {
                     case Status.NOTCHANGED:
@@ -204,7 +257,8 @@ class JacocoTransform extends Transform {
                         if (jacocoExtension.jacocoEnable) {
                             injector.doJar(jarInputFile, jarOutputFile)
                         } else {
-                            FileUtils.copyFile(jarInputFile, jarOutputFile)
+                            // 替换FileUtils.copyFile
+                            Files.copy(jarInputFile.toPath(), jarOutputFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
                         }
                         break
                     case Status.REMOVED:
@@ -214,6 +268,25 @@ class JacocoTransform extends Transform {
                         break
                 }
             }
+        }
+    }
+
+    // 删除目录的辅助方法
+    void deleteDirectory(File directory) {
+        if (directory.exists()) {
+            if (directory.isDirectory()) {
+                File[] files = directory.listFiles()
+                if (files != null) {
+                    for (File file : files) {
+                        if (file.isDirectory()) {
+                            deleteDirectory(file)
+                        } else {
+                            file.delete()
+                        }
+                    }
+                }
+            }
+            directory.delete()
         }
     }
 
@@ -248,14 +321,33 @@ class JacocoTransform extends Transform {
             return fileInputName
         }
         final String parentDirPath = fileInput.getParentFile().getAbsolutePath()
-        final String pathMD5 = Util.MD5(parentDirPath)
-        final int extSepPos = fileInputName.lastIndexOf('.')
-        final String fileInputNamePrefix =
-                (extSepPos >= 0 ? fileInputName.substring(0, extSepPos) : fileInputName)
-        return fileInputNamePrefix + '_' + pathMD5
+        final String pathMD5 = Util.getMD5(parentDirPath.getBytes())
+        return "${pathMD5}_${fileInputName}"
     }
 
-    def getClassName(File f) {
-        return ClassProcessor.filePath2ClassName(f).replaceAll(".class", "")
+    String getClassName(File file) {
+        String name = file.name
+        if (name.endsWith('.class')) {
+            String path = file.path.replace(file.name, '')
+
+            if (path.contains('app/build/')) {
+                int begin = path.indexOf("classes")
+                int end = path.length()
+                path = path.substring(begin, end)
+            }
+
+            if (path.contains("\\")) {
+                path = path.replaceAll("\\\\", "/")
+            }
+
+            path = path.replaceAll("/", '.')
+            name = path + name.replace(".class", '')
+            name = name.replaceAll("classes.main.", '')
+            name = name.replaceAll("classes.", '')
+
+            // 增加将.替换为/的代码，以匹配getDiffAnalyzer中的containsClass方法的参数格式
+            name = name.replaceAll("\\.", '/')
+        }
+        return name
     }
 }

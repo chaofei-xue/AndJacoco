@@ -1,26 +1,67 @@
-apply plugin: 'com.android.library'
-apply plugin: 'maven'
-apply plugin: 'com.github.dcendents.android-maven'
+plugins {
+    id 'com.android.library'
+    id 'maven-publish'
+}
+
 group='com.github.ttpai'
 
 android {
-    compileSdkVersion 29
-    buildToolsVersion "30.0.1"
+    compileSdkVersion 31
+    buildToolsVersion "30.0.3"
 
     defaultConfig {
-        minSdkVersion 16
-        targetSdkVersion 29
+        minSdkVersion 21
+        targetSdkVersion 31
     }
 
     compileOptions {
-        sourceCompatibility = "1.8"
-        targetCompatibility = "1.8"
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
     }
+    
+    namespace "com.jacoco.rt"
 }
+
 dependencies {
     implementation fileTree(dir: "libs", include: ["*.jar"])
-
     compileOnly('com.squareup.okhttp3:okhttp:3.14.9')
+}
 
-
+// 配置发布到JitPack
+afterEvaluate {
+    publishing {
+        publications {
+            // 创建一个名为 release 的 publication
+            release(MavenPublication) {
+                groupId = 'com.github.ttpai'
+                artifactId = 'rt'
+                version = '0.0.7'
+                
+                // 使用AAR构件
+                artifact bundleReleaseAar
+                
+                // 添加POM信息
+                pom {
+                    name = 'AndJacoco Runtime'
+                    description = 'Runtime library for Android Jacoco'
+                    url = 'https://github.com/ttpai/AndJacoco'
+                    
+                    licenses {
+                        license {
+                            name = 'The Apache License, Version 2.0'
+                            url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                        }
+                    }
+                    
+                    developers {
+                        developer {
+                            id = 'ttpai'
+                            name = 'TTPai'
+                            email = 'admin@ttpai.com'
+                        }
+                    }
+                }
+            }
+        }
+    }
 }

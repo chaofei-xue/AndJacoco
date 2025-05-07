@@ -14,8 +14,6 @@
 package com.ttp.and_jacoco;
 
 
-import com.android.utils.FileUtils;
-
 import org.jacoco.core.diff.DiffAnalyzer;
 import org.jacoco.core.instr.Instrumenter;
 import org.jacoco.core.runtime.OfflineInstrumentationAccessGenerator;
@@ -28,6 +26,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -77,7 +77,8 @@ public class ClassInjector extends ClassProcessor {
                 closeQuietly(is);
             }
         } else {
-            FileUtils.copyFile(fileIn, fileOut);
+            // 使用Java NIO替代FileUtils
+            Files.copy(fileIn.toPath(), fileOut.toPath(), StandardCopyOption.REPLACE_EXISTING);
         }
     }
 

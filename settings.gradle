@@ -3,4 +3,4 @@ include ':rt'
 include ':jacoco-core'
 include ':plugin'
 include ':app'
-//rootProject.name = "jacoco-plugin"
+rootProject.name = "AndJacoco"

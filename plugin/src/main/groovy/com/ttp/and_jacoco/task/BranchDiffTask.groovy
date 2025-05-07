@@ -1,7 +1,6 @@
 package com.ttp.and_jacoco.task
 
 
-import com.android.utils.FileUtils
 import com.ttp.and_jacoco.extension.JacocoExtension
 import com.ttp.and_jacoco.report.ReportGenerator
 import com.ttp.and_jacoco.util.Utils
@@ -10,6 +9,10 @@ import org.gradle.api.DefaultTask
 import org.gradle.api.tasks.TaskAction
 import org.jacoco.core.data.MethodInfo
 import org.jacoco.core.diff.DiffAnalyzer
+
+import java.nio.charset.StandardCharsets
+import java.nio.file.Files
+import java.nio.file.Paths
 
 class BranchDiffTask extends DefaultTask {
     def currentName//当前分支名
@@ -99,7 +102,12 @@ class BranchDiffTask extends DefaultTask {
 
         println("writerDiffMethodToFile size=" + DiffAnalyzer.getInstance().getDiffList().size() + " >" + path)
 
-        FileUtils.writeToFile(new File(path), DiffAnalyzer.getInstance().toString())
+        // 替换FileUtils.writeToFile
+        File file = new File(path)
+        if (!file.getParentFile().exists()) {
+            file.getParentFile().mkdirs()
+        }
+        Files.write(Paths.get(path), DiffAnalyzer.getInstance().toString().getBytes(StandardCharsets.UTF_8))
     }
 
     def deleteOtherFile(List<String> diffFiles, String dir) {
@@ -190,6 +198,15 @@ class BranchDiffTask extends DefaultTask {
 
     }
 
+    void deleteEmptyDir(File dir) {
+        File[] dirs = dir.listFiles { it.isDirectory() }
+        for (File d in dirs) {
+            deleteEmptyDir(d)
+        }
+        if (dir.isDirectory() && dir.list().size() == 0) {
+            dir.delete()
+        }
+    }
 
     List<String> readIdList(File file) {
         List<String> list = new ArrayList<>();
@@ -248,69 +265,50 @@ class BranchDiffTask extends DefaultTask {
         if (jacocoExtension.execDir == null) {
             jacocoExtension.execDir = "${project.buildDir}/jacoco/code-coverage/"
         }
-        def dataDir = jacocoExtension.execDir
-        new File(dataDir).mkdirs()
+        new File(jacocoExtension.execDir).mkdirs()
 
-        def host = jacocoExtension.host
-        def android = project.extensions.android
-        def appName = android.defaultConfig.applicationId.replace(".","")
-        def versionCode = android.defaultConfig.versionCode
-//        http://10.10.17.105:8080/WebServer/JacocoApi/queryEcFile?appName=dealer&versionCode=100
-
-        def curl = "curl ${host}/WebServer/JacocoApi/queryEcFile?appName=${appName}&versionCode=${versionCode}"
-        println "curl = ${curl}"
-        def text = curl.execute().text
-        println "queryEcFile = ${text}"
-        text = text.substring(text.indexOf("[") + 1, text.lastIndexOf("]")).replace("]", "")
-
-        println "paths=${text}"
-
-        if ("".equals(text)) {
-            return
+        boolean isSuccess = getUrlFile()
+        if (!isSuccess) {
+            println "downloadEcData getUrlFile false"
         }
-        String[] paths = text.split(',')
-        println "下载executionData 文件 length=${paths.length}"
-
-        if (paths != null && paths.size() > 0) {
-            for (String path : paths) {
-                path = path.replace("\"", '')
-                def name = path.substring(path.lastIndexOf("/") + 1)
-                println "${path}"
-                def file = new File(dataDir, name)
-                if (file.exists() && file.length() > 0) //存在
-                    continue
-                println "downloadFile ${host}${path}"
-                println "execute curl -o ${file.getAbsolutePath()} ${host}${path}"
-
-                "curl -o ${file.getAbsolutePath()} ${host}${path}".execute().text
-            }
-        }
-        println "downloadData 下载完成"
-
     }
 
+    boolean getUrlFile() {
+        if (jacocoExtension.host == null || jacocoExtension.host.trim() == '') {
+            return false
+        }
 
-    boolean deleteEmptyDir(File dir) {
-        if (dir.isDirectory()) {
-            boolean flag = true
-            for (File f : dir.listFiles()) {
-                if (deleteEmptyDir(f))
-                    f.delete()
-                else
-                    flag = false
+        String urlpath = jacocoExtension.host + "/jacocoDiff/getecfile"
+        try {
+            println "getUrlFile urlpath=${urlpath}"
+            URL url = new URL(urlpath)
+            URLConnection uc = url.openConnection()
+            uc.setDoOutput(true)
+            uc.connect()
+            InputStream inputstream = uc.getInputStream()
+            byte[] buffer = new byte[4096]
+            int byteRead = -1
+
+            String path = jacocoExtension.execDir + "jacoco.exec"
+            new File(path).getParentFile().mkdirs()
+            FileOutputStream outputstream = new FileOutputStream(path)
+            while ((byteRead = inputstream.read(buffer)) != -1) {
+                outputstream.write(buffer, 0, byteRead)
             }
-            return flag
+
+            outputstream.close()
+            inputstream.close()
+
+            println("getUrlFile success. path=${path}")
+
+            return true
+        } catch (Exception e) {
+            e.printStackTrace()
         }
         return false
     }
 
-    def getBuildType() {
-        def taskNames = project.gradle.startParameter.taskNames
-        for (tn in taskNames) {
-            if (tn.startsWith("assemble")) {
-                return tn.replaceAll("assemble", "").toLowerCase()
-            }
-        }
-        return ""
+    String getBuildType() {
+        return project.android.applicationVariants[0].name
     }
 }
