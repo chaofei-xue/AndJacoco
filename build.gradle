@@ -3,22 +3,15 @@ buildscript {
     ext.kotlin_version = "1.8.10"
     repositories {
         maven { url 'https://jitpack.io' }
-
+        mavenLocal()
         google()
         jcenter()
-        maven { 
-            url "http://172.16.2.101:8081/nexus/content/repositories/com.ttpai/"
-            allowInsecureProtocol = true
-        }
-        maven { url "https://oss.sonatype.org/content/repositories/snapshots/"}
         mavenCentral()
     }
     dependencies {
         classpath "com.android.tools.build:gradle:7.4.2"
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-        // 使用本地plugin模块，但需要先构建
-        // classpath project(':plugin')
-        // classpath 'com.github.dcendents:android-maven-gradle-plugin:2.1'
+        classpath "com.github.ttpai:plugin:0.0.7"
     }
 }
 
