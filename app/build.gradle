@@ -11,7 +11,7 @@ plugins {
 jacocoCoverageConfig {
     jacocoEnable true //开关
     branchName 'main'.toString()//要对比的分支名
-    host="http://10.10.17.105:8080".toString()//下载服务host
+    host="http://192.168.1.8:8080".toString()//下载服务host
     execDir "${project.buildDir.absolutePath}/outputs/coverage".toString()//ec 下载存放路径
     sourceDirectories = getAllJavaDir() //源码路径
     classDirectories = ["${rootProject.projectDir.absolutePath}/app/classes".toString()] //classes 路径
@@ -41,7 +41,7 @@ android {
         versionName "1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-        buildConfigField "String", "host", "\"http://10.10.17.105:8080\""
+        buildConfigField "String", "host", "\"http://192.168.1.8:8080\""
     }
 
     buildFeatures {
@@ -66,14 +66,14 @@ android {
         release {
             minifyEnabled false
             // 暂时注释掉
-            // buildConfigField "String", "host", "\"${jacocoCoverageConfig.host}\""
+            buildConfigField "String", "host", "\"${jacocoCoverageConfig.host}\""
 
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
 
         debug{
             // 暂时注释掉
-            // buildConfigField "String", "host", "\"${jacocoCoverageConfig.host}\""
+            buildConfigField "String", "host", "\"${jacocoCoverageConfig.host}\""
         }
     }
 
