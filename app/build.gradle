@@ -15,8 +15,8 @@ jacocoCoverageConfig {
     execDir "${project.buildDir.absolutePath}/outputs/coverage".toString()//ec 下载存放路径
     sourceDirectories = getAllJavaDir() //源码路径
     classDirectories = ["${rootProject.projectDir.absolutePath}/app/classes".toString()] //classes 路径
-    gitPushShell="${project.projectDir}/shell/gitPushShell.sh" //提交git 命令
-    copyClassShell="${project.projectDir}/shell/pullDiffClass.sh" //copy classes 命令
+    gitPushShell="${project.projectDir}/shell/gitPushShell.sh".toString() //提交git 命令
+    copyClassShell="${project.projectDir}/shell/pullDiffClass.sh".toString() //copy classes 命令
     includes = ['com.andjacoco.demo'.toString()] //要 包含的class 包名
     excludeClass = { // return true 表示要排除的class
 //        println("exclude it=${it}")
@@ -85,7 +85,8 @@ def ArrayList<String> getAllJavaDir() {
     Set<Project> projects = project.rootProject.subprojects
     List<String> javaDir = new ArrayList<>(projects.size())
     projects.forEach {
-        javaDir.add("$it.projectDir/src/main/java")
+        // 显式调用 .toString()
+        javaDir.add("$it.projectDir/src/main/java".toString())
     }
     return javaDir
 }
