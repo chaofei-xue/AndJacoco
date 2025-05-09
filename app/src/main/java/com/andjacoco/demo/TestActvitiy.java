@@ -14,14 +14,10 @@ public class TestActvitiy extends AppCompatActivity {
         setContentView(R.layout.activity_test_actvitiy);
     }
 
-    public void onClick(View v){
-        switch(v.getId()){
-            case R.id.button:
-                Toast.makeText(this,"test",Toast.LENGTH_SHORT);
-              break;
-            default:
-
-              break;
+    public void onClick(View v) {
+        int id = v.getId();
+        if (id == R.id.button) {
+            Toast.makeText(this, "test", Toast.LENGTH_SHORT).show();
         }
     }
 }
