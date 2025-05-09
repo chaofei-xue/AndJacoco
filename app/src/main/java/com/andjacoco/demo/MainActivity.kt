@@ -16,10 +16,15 @@ class MainActivity : BaseActivity() {
 
         Hello.Toast(this, "hello132")
 
+
         binding.tv.setOnClickListener {
             startActivity(Intent(this, SecondActivity::class.java))
 
             Toast.makeText(this, "Test Info", Toast.LENGTH_LONG).show()
+
+            Toast.makeText(this, "Test Code1", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "Test Code2", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "Test Code3", Toast.LENGTH_LONG).show()
         }
 
         Hello.hello(false)
