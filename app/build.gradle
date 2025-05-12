@@ -3,7 +3,7 @@ plugins {
     id 'org.jetbrains.kotlin.android'
     id 'kotlin-parcelize'
     // 启用插件
-    id 'com.ttp.andjacoco'
+    id 'com.ttp.and_jacoco'
 }
 
 //代码覆盖配置，暂时注释
